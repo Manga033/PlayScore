@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -53,13 +54,15 @@ fun ViewGameScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (game == null) {
+        if (!uiState.hasGame) {
             Text(
                 text = "No game selected.",
                 fontSize = 14.sp,
                 color = TextSecondary
             )
         } else {
+            val game = uiState.game!!
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -105,6 +108,23 @@ fun ViewGameScreen(
                             color = TextSecondary
                         )
                     }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.EmojiEvents,
+                            contentDescription = null,
+                            tint = AccentPurple,
+                            modifier = Modifier.padding(end = 6.dp)
+                        )
+                        Text(
+                            text = "Winner: ${uiState.winnerName}",
+                            fontSize = 14.sp,
+                            color = AccentPurple,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
 
@@ -135,7 +155,7 @@ fun ViewGameScreen(
 
             if(game.type == "Board Game") {
                 Text(
-                    text = "Total Players: ${game.players.size}",
+                    text = "Total Players: ${uiState.playerCount}",
                     fontSize = 14.sp,
                     color = TextSecondary
                 )
