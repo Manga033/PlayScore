@@ -1,19 +1,25 @@
 package com.example.playscore.presentation.ui.screen.home
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,6 +32,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -35,183 +42,265 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.playscore.presentation.theme.TextSecondary
+import com.example.playscore.presentation.ui.component.EmptyStateMessage
+import com.example.playscore.presentation.ui.component.ScrollToTopButton
 import com.example.playscore.presentation.ui.screen.home.component.GameCard
+import com.example.playscore.presentation.ui.screen.home.component.GameTypeCard
+import com.example.playscore.presentation.ui.screen.home.component.RecentGameCard
 import com.example.playscore.presentation.view_model.PlayScoreViewModel
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
     viewModel: PlayScoreViewModel,
     onNavigateToLogin: () -> Unit,
-    onNavigateToCreateGame: () -> Unit,
-    onNavigateToViewGame: (Int) -> Unit
+    onNavigateToViewGame: (Int, String) -> Unit
 ) {
     val uiState = viewModel.homeUiState.value
 
     var searchQuery by rememberSaveable { mutableStateOf("") }
+    var sortAscending by rememberSaveable { mutableStateOf(false) }
+
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+
+    val showScrollToTop by remember {
+        derivedStateOf { listState.firstVisibleItemIndex > 2 }
+    }
 
     val filteredGames by remember {
         derivedStateOf {
-            if (searchQuery.isBlank()) {
-                uiState.games
-            } else {
-                uiState.games.filter { game ->
-                    game.name.contains(searchQuery, ignoreCase = true) ||
-                            game.type.contains(searchQuery, ignoreCase = true)
-                }
+            val currentState = viewModel.homeUiState.value
+            val typeFiltered = currentState.filteredByType
+            val searched = if (searchQuery.isBlank()) typeFiltered
+            else typeFiltered.filter { game ->
+                game.name.contains(searchQuery, ignoreCase = true) ||
+                        game.type.contains(searchQuery, ignoreCase = true)
             }
+            if (sortAscending) searched.sortedBy { it.id }
+            else searched.sortedByDescending { it.id }
         }
     }
 
     val isSearchEmpty by remember {
-        derivedStateOf { filteredGames.isEmpty() && uiState.games.isNotEmpty() }
+        derivedStateOf {
+            filteredGames.isEmpty() && viewModel.homeUiState.value.hasGames
+        }
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
 
-    Column(modifier = Modifier.fillMaxSize()) {
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 8.dp),
-            contentAlignment = Alignment.Center
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 80.dp)
         ) {
-            Text(
-                text = "PlayScore",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-            IconButton(
-                onClick = onNavigateToLogin,
-                modifier = Modifier.align(Alignment.CenterEnd)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Login",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
 
-        Text(
-            text = "Track scores for your board games and sports matches.",
-            fontSize = 14.sp,
-            color = TextSecondary,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            placeholder = {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "PlayScore",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    IconButton(
+                        onClick = onNavigateToLogin,
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Login",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
                 Text(
-                    text = "Search by game or type...",
+                    text = "Track scores for your board games and sports matches.",
+                    fontSize = 14.sp,
                     color = TextSecondary,
-                    fontSize = 14.sp
+                    modifier = Modifier.padding(horizontal = 16.dp)
                 )
-            },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "Search",
-                    tint = MaterialTheme.colorScheme.primary
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            item {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = {
+                        Text(
+                            text = "Search by game or type...",
+                            color = TextSecondary,
+                            fontSize = 14.sp
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = TextSecondary,
+                        cursorColor = MaterialTheme.colorScheme.primary
+                    )
                 )
-            },
-            singleLine = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = TextSecondary,
-                cursorColor = MaterialTheme.colorScheme.primary
-            )
-        )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            if (uiState.hasGames) {
+                item {
+                    Text(
+                        text = "${viewModel.totalGamesCount} games tracked  ·  " +
+                                "${viewModel.boardGamesCount} board  ·  " +
+                                "${viewModel.sportsGamesCount} sports",
+                        fontSize = 12.sp,
+                        color = TextSecondary,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
 
-        Text(
-            text = "Recent Games",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
+            item {
+                Text(
+                    text = "Filter by Type",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(viewModel.getGameTypes()) { type ->
+                        GameTypeCard(
+                            type = type,
+                            count = uiState.countForType(type),
+                            isSelected = uiState.selectedType == type,
+                            onClick = { viewModel.selectGameType(type) }
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(20.dp))
+            }
 
-        if(viewModel.hasGames) {
-            Text(
-                text = "${viewModel.totalGamesCount} games tracked  ·  " +
-                        "${viewModel.boardGamesCount} board  ·  " +
-                        "${viewModel.sportsGamesCount} sports",
-                fontSize = 12.sp,
-                color = TextSecondary,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
-            )
-        }
+            if (uiState.recentGames.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Recent Games",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(
+                            items = uiState.recentGames,
+                            key = { game -> game.id }
+                        ) { game ->
+                            RecentGameCard(
+                                game = game,
+                                onClick = { onNavigateToViewGame(game.id, game.name) }
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(20.dp))
+                }
+            }
 
-        Spacer(modifier = Modifier.height(4.dp))
+            stickyHeader(key = "allGamesHeader") {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(top = 4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "All Games",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (uiState.hasGames) {
+                                Text(
+                                    text = "${filteredGames.size} results",
+                                    fontSize = 12.sp,
+                                    color = TextSecondary
+                                )
+                            }
+                            IconButton(onClick = { sortAscending = !sortAscending }) {
+                                Icon(
+                                    imageVector = Icons.Default.SwapVert,
+                                    contentDescription = if (sortAscending) "Sort newest first" else "Sort oldest first",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
 
-        HorizontalDivider(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f)
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
-        ) {
             when {
-                !viewModel.hasGames -> {
-                    Text(
-                        text = "🎮",
-                        fontSize = 48.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 32.dp)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "No games yet. Create your first game!",
-                        fontSize = 14.sp,
-                        color = TextSecondary,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                !uiState.hasGames -> {
+                    item {
+                        EmptyStateMessage(
+                            message = "No games yet",
+                            subtitle = "Create your first game to start tracking scores!"
+                        )
+                    }
                 }
-
                 isSearchEmpty -> {
-                    Text(
-                        text = "🔍",
-                        fontSize = 48.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 32.dp)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "No games match \"$searchQuery\"",
-                        fontSize = 14.sp,
-                        color = TextSecondary,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    item {
+                        EmptyStateMessage(
+                            message = "No results found",
+                            subtitle = "No games match \"$searchQuery\". Try a different search."
+                        )
+                    }
                 }
-
                 else -> {
-                    filteredGames.forEach { game ->
+                    items(
+                        items = filteredGames,
+                        key = { game -> game.id }
+                    ) { game ->
                         GameCard(
                             game = game,
-                            onClick = { onNavigateToViewGame(game.id) }
+                            onClick = { onNavigateToViewGame(game.id, game.name) },
+                            modifier = Modifier.padding(horizontal = 16.dp)
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                     }
@@ -219,16 +308,17 @@ fun HomeScreen(
             }
         }
 
-        Button(
-            onClick = onNavigateToCreateGame,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
+        if (showScrollToTop) {
+            ScrollToTopButton(
+                onClick = {
+                    coroutineScope.launch {
+                        listState.animateScrollToItem(0)
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 16.dp, bottom = 16.dp)
             )
-        ) {
-            Text(text = "Create Game", fontSize = 16.sp)
         }
     }
 }

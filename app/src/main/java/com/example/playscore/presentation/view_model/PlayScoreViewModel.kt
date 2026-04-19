@@ -29,9 +29,15 @@ class PlayScoreViewModel : ViewModel() {
         get() = _homeUiState.value.sportsGames.size
 
     fun selectGame(gameId: Int) {
-        val game = _homeUiState.value.games.find {
-            it.id == gameId
-        }
+        val game = GameRepository.getGameById(gameId)
         _viewGameUiState.value = ViewGameUiState(game = game)
+    }
+
+    fun selectGameType(type: String) {
+        _homeUiState.value = _homeUiState.value.copy(selectedType = type)
+    }
+
+    fun getGameTypes(): List<String> {
+        return GameRepository.getGameTypes()
     }
 }

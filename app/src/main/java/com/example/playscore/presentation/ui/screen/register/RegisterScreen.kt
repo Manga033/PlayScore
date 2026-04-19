@@ -49,10 +49,11 @@ fun RegisterScreen(
 ) {
     var username by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
-    var password by rememberSaveable() { mutableStateOf("") }
-    var confirmPassword by rememberSaveable() { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
+    var confirmPassword by rememberSaveable { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+
     val usernameError by remember {
         derivedStateOf {
             if (username.isNotBlank() && !Validation.isUsernameValid(username)) {
@@ -60,6 +61,7 @@ fun RegisterScreen(
             } else ""
         }
     }
+
     val emailError by remember {
         derivedStateOf {
             if (email.isNotBlank() && !Validation.isEmailValid(email)) {
@@ -67,6 +69,7 @@ fun RegisterScreen(
             } else ""
         }
     }
+
     val passwordError by remember {
         derivedStateOf {
             if (password.isNotBlank() && !Validation.isPasswordValid(password)) {
@@ -74,6 +77,7 @@ fun RegisterScreen(
             } else ""
         }
     }
+
     val confirmPasswordError by remember {
         derivedStateOf {
             if (confirmPassword.isNotBlank() && !Validation.doPasswordsMatch(password, confirmPassword)) {
@@ -91,6 +95,53 @@ fun RegisterScreen(
         }
     }
 
+    RegisterScreen(
+        username = username,
+        onUsernameChange = { username = it },
+        usernameError = usernameError,
+        email = email,
+        onEmailChange = { email = it },
+        emailError = emailError,
+        password = password,
+        onPasswordChange = { password = it },
+        passwordError = passwordError,
+        passwordVisible = passwordVisible,
+        onPasswordVisibilityToggle = { passwordVisible = !passwordVisible },
+        confirmPassword = confirmPassword,
+        onConfirmPasswordChange = { confirmPassword = it },
+        confirmPasswordError = confirmPasswordError,
+        confirmPasswordVisible = confirmPasswordVisible,
+        onConfirmPasswordVisibilityToggle = { confirmPasswordVisible = !confirmPasswordVisible },
+        isFormValid = isFormValid,
+        onNavigateToLogin = onNavigateToLogin,
+        onNavigateBack = onNavigateBack,
+        onRegisterSuccess = onRegisterSuccess
+    )
+}
+
+@Composable
+private fun RegisterScreen(
+    username: String,
+    onUsernameChange: (String) -> Unit,
+    usernameError: String,
+    email: String,
+    onEmailChange: (String) -> Unit,
+    emailError: String,
+    password: String,
+    onPasswordChange: (String) -> Unit,
+    passwordError: String,
+    passwordVisible: Boolean,
+    onPasswordVisibilityToggle: () -> Unit,
+    confirmPassword: String,
+    onConfirmPasswordChange: (String) -> Unit,
+    confirmPasswordError: String,
+    confirmPasswordVisible: Boolean,
+    onConfirmPasswordVisibilityToggle: () -> Unit,
+    isFormValid: Boolean,
+    onNavigateToLogin: () -> Unit,
+    onNavigateBack: () -> Unit,
+    onRegisterSuccess: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -126,7 +177,7 @@ fun RegisterScreen(
 
                 RegisterFormField(
                     value = username,
-                    onValueChange = { username = it },
+                    onValueChange = onUsernameChange,
                     label = "Username",
                     placeholder = "e.g. John",
                     errorMessage = usernameError
@@ -136,7 +187,7 @@ fun RegisterScreen(
 
                 RegisterFormField(
                     value = email,
-                    onValueChange = { email = it },
+                    onValueChange = onEmailChange,
                     label = "Email",
                     placeholder = "e.g john@email.com",
                     errorMessage = emailError
@@ -146,14 +197,14 @@ fun RegisterScreen(
 
                 RegisterFormField(
                     value = password,
-                    onValueChange = { password = it },
+                    onValueChange = onPasswordChange,
                     label = "Password",
                     placeholder = "Enter password",
                     errorMessage = passwordError,
                     visualTransformation = if (passwordVisible) VisualTransformation.None
                     else PasswordVisualTransformation(),
                     trailingIcon = {
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        IconButton(onClick = onPasswordVisibilityToggle) {
                             Icon(
                                 imageVector = if (passwordVisible) Icons.Default.VisibilityOff
                                 else Icons.Default.Visibility,
@@ -168,14 +219,14 @@ fun RegisterScreen(
 
                 RegisterFormField(
                     value = confirmPassword,
-                    onValueChange = { confirmPassword = it },
+                    onValueChange = onConfirmPasswordChange,
                     label = "Confirm Password",
                     placeholder = "Repeat your password",
                     errorMessage = confirmPasswordError,
                     visualTransformation = if (confirmPasswordVisible) VisualTransformation.None
                     else PasswordVisualTransformation(),
                     trailingIcon = {
-                        IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                        IconButton(onClick = onConfirmPasswordVisibilityToggle) {
                             Icon(
                                 imageVector = if (confirmPasswordVisible) Icons.Default.VisibilityOff
                                 else Icons.Default.Visibility,
@@ -221,6 +272,7 @@ fun RegisterScreen(
                         fontSize = 14.sp
                     )
                 }
+
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }

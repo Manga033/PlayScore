@@ -48,6 +48,7 @@ fun LoginScreen(
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+
     val emailError by remember {
         derivedStateOf {
             if (email.isNotBlank() && !Validation.isEmailValid(email)) {
@@ -70,6 +71,37 @@ fun LoginScreen(
         }
     }
 
+    LoginScreen(
+        email = email,
+        onEmailChange = { email = it },
+        emailError = emailError,
+        password = password,
+        onPasswordChange = { password = it },
+        passwordError = passwordError,
+        passwordVisible = passwordVisible,
+        onPasswordVisibilityToggle = { passwordVisible = !passwordVisible },
+        isFormValid = isFormValid,
+        onNavigateToRegister = onNavigateToRegister,
+        onNavigateBack = onNavigateBack,
+        onLoginSuccess = onLoginSuccess
+    )
+}
+
+@Composable
+private fun LoginScreen(
+    email: String,
+    onEmailChange: (String) -> Unit,
+    emailError: String,
+    password: String,
+    onPasswordChange: (String) -> Unit,
+    passwordError: String,
+    passwordVisible: Boolean,
+    onPasswordVisibilityToggle: () -> Unit,
+    isFormValid: Boolean,
+    onNavigateToRegister: () -> Unit,
+    onNavigateBack: () -> Unit,
+    onLoginSuccess: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -101,7 +133,7 @@ fun LoginScreen(
 
                 LoginFormField(
                     value = email,
-                    onValueChange = { email = it },
+                    onValueChange = onEmailChange,
                     label = "Email",
                     placeholder = "e.g. john@email.com",
                     errorMessage = emailError
@@ -111,14 +143,14 @@ fun LoginScreen(
 
                 LoginFormField(
                     value = password,
-                    onValueChange = { password = it },
+                    onValueChange = onPasswordChange,
                     label = "Password",
                     placeholder = "Enter your password",
                     errorMessage = passwordError,
                     visualTransformation = if (passwordVisible) VisualTransformation.None
                     else PasswordVisualTransformation(),
                     trailingIcon = {
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        IconButton(onClick = onPasswordVisibilityToggle) {
                             Icon(
                                 imageVector = if (passwordVisible) Icons.Default.VisibilityOff
                                 else Icons.Default.Visibility,

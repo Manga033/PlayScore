@@ -43,10 +43,13 @@ fun CreateGameScreen(
     var player2 by rememberSaveable { mutableStateOf("") }
     var player3 by rememberSaveable { mutableStateOf("") }
     var player4 by rememberSaveable { mutableStateOf("") }
+
     val gameTypes = listOf("Board Game", "Sports")
+
     val isBoardGame by remember {
         derivedStateOf { gameType == "Board Game" }
     }
+
     val gameNameError by remember {
         derivedStateOf {
             if (gameName.isNotBlank() && !Validation.isGameNameValid(gameName)) {
@@ -60,7 +63,6 @@ fun CreateGameScreen(
             Validation.isGameNameValid(gameName) && player1.isNotBlank()
         }
     }
-
 
     Column(
         modifier = Modifier
@@ -147,7 +149,7 @@ fun CreateGameScreen(
                 label = if (isBoardGame) "Player 1 *" else "Team 1 *",
                 placeholder = if (isBoardGame) "Player name" else "Team name",
                 errorMessage = if (player1.isEmpty() && gameName.isNotBlank()) {
-                    "At least one player is required to create a game!"
+                    "At least one player is required!"
                 } else ""
             )
 

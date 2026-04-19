@@ -30,7 +30,8 @@ import com.example.playscore.presentation.theme.TextSecondary
 @Composable
 fun GameCard(
     game: Game,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val winner = game.players.maxByOrNull { it.score }
 
@@ -47,7 +48,7 @@ fun GameCard(
     }
 
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
