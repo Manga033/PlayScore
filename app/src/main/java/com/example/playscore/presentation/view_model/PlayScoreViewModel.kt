@@ -13,15 +13,31 @@ class PlayScoreViewModel : ViewModel() {
     )
     val homeUiState: State<HomeUiState> = _homeUiState
 
-    private val _viewGameUiState = mutableStateOf(
-        ViewGameUiState()
-    )
+    private val _viewGameUiState = mutableStateOf(ViewGameUiState())
     val viewGameUiState: State<ViewGameUiState> = _viewGameUiState
 
+    val totalGamesCount: Int
+        get() = _homeUiState.value.totalGames
+
+    val hasGames: Boolean
+        get() = _homeUiState.value.hasGames
+
+    val boardGamesCount: Int
+        get() = _homeUiState.value.boardGames.size
+
+    val sportsGamesCount: Int
+        get() = _homeUiState.value.sportsGames.size
+
     fun selectGame(gameId: Int) {
-        val game = _homeUiState.value.games.find {
-            it.id == gameId
-        }
+        val game = GameRepository.getGameById(gameId)
         _viewGameUiState.value = ViewGameUiState(game = game)
+    }
+
+    fun selectGameType(type: String) {
+        _homeUiState.value = _homeUiState.value.copy(selectedType = type)
+    }
+
+    fun getGameTypes(): List<String> {
+        return GameRepository.getGameTypes()
     }
 }

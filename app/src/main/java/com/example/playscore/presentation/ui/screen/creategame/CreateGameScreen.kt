@@ -16,9 +16,11 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,19 +37,32 @@ fun CreateGameScreen(
     onNavigateBack: () -> Unit,
     onGameCreated: () -> Unit
 ) {
-    var gameName by remember { mutableStateOf("") }
-    var gameType by remember { mutableStateOf("Board Game") }
-    var player1 by remember { mutableStateOf("") }
-    var player2 by remember { mutableStateOf("") }
-    var player3 by remember { mutableStateOf("") }
-    var player4 by remember { mutableStateOf("") }
-    var gameNameError by remember { mutableStateOf("") }
-    var player1Error by remember { mutableStateOf("") }
+    var gameName by rememberSaveable { mutableStateOf("") }
+    var gameType by rememberSaveable { mutableStateOf("Board Game") }
+    var player1 by rememberSaveable { mutableStateOf("") }
+    var player2 by rememberSaveable { mutableStateOf("") }
+    var player3 by rememberSaveable { mutableStateOf("") }
+    var player4 by rememberSaveable { mutableStateOf("") }
 
     val gameTypes = listOf("Board Game", "Sports")
-    val isFormValid = Validation.isGameNameValid(gameName) && player1.isNotBlank()
 
-    val isBoardGame = gameType == "Board Game"
+    val isBoardGame by remember {
+        derivedStateOf { gameType == "Board Game" }
+    }
+
+    val gameNameError by remember {
+        derivedStateOf {
+            if (gameName.isNotBlank() && !Validation.isGameNameValid(gameName)) {
+                "Game name cannot be empty!"
+            } else ""
+        }
+    }
+
+    val isFormValid by remember {
+        derivedStateOf {
+            Validation.isGameNameValid(gameName) && player1.isNotBlank()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -79,10 +94,7 @@ fun CreateGameScreen(
 
             CreateGameFormField(
                 value = gameName,
-                onValueChange = {
-                    gameName = it
-                    gameNameError = if (it.isBlank()) "Game name cannot be empty!" else ""
-                },
+                onValueChange = { gameName = it },
                 label = "Game Name",
                 placeholder = "e.g. Football Match",
                 errorMessage = gameNameError
@@ -133,13 +145,12 @@ fun CreateGameScreen(
 
             CreateGameFormField(
                 value = player1,
-                onValueChange = {
-                    player1 = it
-                    player1Error = if (it.isBlank()) "At least one player is required" else ""
-                },
+                onValueChange = { player1 = it },
                 label = if (isBoardGame) "Player 1 *" else "Team 1 *",
                 placeholder = if (isBoardGame) "Player name" else "Team name",
-                errorMessage = player1Error
+                errorMessage = if (player1.isEmpty() && gameName.isNotBlank()) {
+                    "At least one player is required!"
+                } else ""
             )
 
             Spacer(modifier = Modifier.height(12.dp))

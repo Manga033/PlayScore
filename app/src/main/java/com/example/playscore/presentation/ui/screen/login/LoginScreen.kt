@@ -18,9 +18,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,14 +45,63 @@ fun LoginScreen(
     onNavigateBack: () -> Unit,
     onLoginSuccess: () -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var emailError by remember { mutableStateOf("") }
-    var passwordError by remember { mutableStateOf("") }
 
-    val isFormValid = Validation.isEmailValid(email) && Validation.isPasswordValid(password)
+    val emailError by remember {
+        derivedStateOf {
+            if (email.isNotBlank() && !Validation.isEmailValid(email)) {
+                "Enter a valid email address"
+            } else ""
+        }
+    }
 
+    val passwordError by remember {
+        derivedStateOf {
+            if (password.isNotBlank() && !Validation.isPasswordValid(password)) {
+                "Password must be at least 6 characters long"
+            } else ""
+        }
+    }
+
+    val isFormValid by remember {
+        derivedStateOf {
+            Validation.isEmailValid(email) && Validation.isPasswordValid(password)
+        }
+    }
+
+    LoginScreen(
+        email = email,
+        onEmailChange = { email = it },
+        emailError = emailError,
+        password = password,
+        onPasswordChange = { password = it },
+        passwordError = passwordError,
+        passwordVisible = passwordVisible,
+        onPasswordVisibilityToggle = { passwordVisible = !passwordVisible },
+        isFormValid = isFormValid,
+        onNavigateToRegister = onNavigateToRegister,
+        onNavigateBack = onNavigateBack,
+        onLoginSuccess = onLoginSuccess
+    )
+}
+
+@Composable
+private fun LoginScreen(
+    email: String,
+    onEmailChange: (String) -> Unit,
+    emailError: String,
+    password: String,
+    onPasswordChange: (String) -> Unit,
+    passwordError: String,
+    passwordVisible: Boolean,
+    onPasswordVisibilityToggle: () -> Unit,
+    isFormValid: Boolean,
+    onNavigateToRegister: () -> Unit,
+    onNavigateBack: () -> Unit,
+    onLoginSuccess: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -82,12 +133,7 @@ fun LoginScreen(
 
                 LoginFormField(
                     value = email,
-                    onValueChange = {
-                        email = it
-                        emailError = if (it.isNotBlank() && !Validation.isEmailValid(it)) {
-                            "Enter a valid email address"
-                        } else ""
-                    },
+                    onValueChange = onEmailChange,
                     label = "Email",
                     placeholder = "e.g. john@email.com",
                     errorMessage = emailError
@@ -97,19 +143,14 @@ fun LoginScreen(
 
                 LoginFormField(
                     value = password,
-                    onValueChange = {
-                        password = it
-                        passwordError = if (it.isNotBlank() && !Validation.isPasswordValid(it)) {
-                            "Password must be at least 6 characters"
-                        } else ""
-                    },
+                    onValueChange = onPasswordChange,
                     label = "Password",
                     placeholder = "Enter your password",
                     errorMessage = passwordError,
                     visualTransformation = if (passwordVisible) VisualTransformation.None
                     else PasswordVisualTransformation(),
                     trailingIcon = {
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        IconButton(onClick = onPasswordVisibilityToggle) {
                             Icon(
                                 imageVector = if (passwordVisible) Icons.Default.VisibilityOff
                                 else Icons.Default.Visibility,

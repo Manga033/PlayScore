@@ -1,18 +1,5 @@
 package com.example.playscore.data.repository
 
-data class Player(
-    val name: String,
-    val score: Int
-)
-
-data class Game(
-    val id: Int,
-    val name: String,
-    val type: String,
-    val players: List<Player>,
-    val date: String
-)
-
 object GameRepository {
     fun getGames() : List<Game> {
         return listOf(
@@ -56,8 +43,36 @@ object GameRepository {
                     Player("Dino", 210)
                 ),
                 date = "Mar 26, 2026"
+            ),
+            Game(
+                id = 5,
+                name = "Chess Final",
+                type = "Board Game",
+                players = listOf(
+                    Player("Magnus Carlsen", 12),
+                    Player("Hikaru Nakamura", 8)
+                ),
+                date = "10 Apr, 2026"
+            ),
+            Game(
+                id = 6,
+                name = "NBA Playoffs",
+                type = "Basketball",
+                players = listOf(
+                    Player("LA Lakers", 112),
+                    Player("Boston Celtics", 108)
+                ),
+                date = "15 Apr, 2026"
             )
         )
+    }
+
+    fun getGameById(id : Int): Game? {
+        return getGames().find { it.id == id }
+    }
+
+    fun getGameTypes(): List<String> {
+        return listOf("All", "Football", "Basketball", "Tennis", "Board Game")
     }
 }
 

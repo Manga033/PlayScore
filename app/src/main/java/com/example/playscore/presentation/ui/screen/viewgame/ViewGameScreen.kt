@@ -1,20 +1,24 @@
 package com.example.playscore.presentation.ui.screen.viewgame
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import com.example.playscore.presentation.theme.AccentPurple
 import com.example.playscore.presentation.theme.DarkCard
 import com.example.playscore.presentation.theme.TextSecondary
+import com.example.playscore.presentation.ui.component.EmptyStateMessage
 import com.example.playscore.presentation.ui.component.ScreenHeader
 import com.example.playscore.presentation.ui.screen.viewgame.component.PlayerScoreCard
 import com.example.playscore.presentation.view_model.PlayScoreViewModel
@@ -34,32 +39,34 @@ import com.example.playscore.presentation.view_model.PlayScoreViewModel
 @Composable
 fun ViewGameScreen(
     viewModel: PlayScoreViewModel,
+    gameName: String,
     onNavigateBack: () -> Unit
 ) {
     val uiState = viewModel.viewGameUiState.value
-    val game = uiState.game
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
         ScreenHeader(
-            title = "Game Details",
+            title = gameName.ifBlank { "Game Details" },
             showBackButton = true,
             onBackClick = onNavigateBack
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (game == null) {
-            Text(
-                text = "No game selected.",
-                fontSize = 14.sp,
-                color = TextSecondary
+        if (!uiState.hasGame) {
+            EmptyStateMessage(
+                message = "Game not found",
+                subtitle = "Please go back and select a game"
             )
         } else {
+            val game = uiState.game!!
+            val sortedPlayers = game.players.sortedByDescending { it.score }
+            val highestScore = sortedPlayers.firstOrNull()?.score ?: 0
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -73,9 +80,7 @@ fun ViewGameScreen(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-
                     Spacer(modifier = Modifier.height(8.dp))
-
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.Star,
@@ -83,15 +88,9 @@ fun ViewGameScreen(
                             tint = AccentPurple,
                             modifier = Modifier.padding(end = 6.dp)
                         )
-                        Text(
-                            text = game.type,
-                            fontSize = 14.sp,
-                            color = AccentPurple
-                        )
+                        Text(text = game.type, fontSize = 14.sp, color = AccentPurple)
                     }
-
                     Spacer(modifier = Modifier.height(4.dp))
-
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.DateRange,
@@ -99,10 +98,21 @@ fun ViewGameScreen(
                             tint = TextSecondary,
                             modifier = Modifier.padding(end = 6.dp)
                         )
+                        Text(text = game.date, fontSize = 14.sp, color = TextSecondary)
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.EmojiEvents,
+                            contentDescription = null,
+                            tint = AccentPurple,
+                            modifier = Modifier.padding(end = 6.dp)
+                        )
                         Text(
-                            text = game.date,
+                            text = "Winner: ${uiState.winnerName}",
                             fontSize = 14.sp,
-                            color = TextSecondary
+                            color = AccentPurple,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }
@@ -117,28 +127,38 @@ fun ViewGameScreen(
                 color = MaterialTheme.colorScheme.onBackground
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            val sortedPlayers = game.players.sortedByDescending { it.score }
-            val highestScore = sortedPlayers.firstOrNull()?.score ?: 0
-
-            sortedPlayers.forEachIndexed { index, player ->
-                PlayerScoreCard(
-                    player = player,
-                    isWinner = player.score == highestScore,
-                    rank = index + 1
+            if (game.type == "Board Game") {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "Total Players: ${uiState.playerCount}",
+                    fontSize = 12.sp,
+                    color = TextSecondary
                 )
-                Spacer(modifier = Modifier.height(8.dp))
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            if(game.type == "Board Game") {
-                Text(
-                    text = "Total Players: ${game.players.size}",
-                    fontSize = 14.sp,
-                    color = TextSecondary
-                )
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(bottom = 16.dp)
+            ) {
+                itemsIndexed(
+                    items = sortedPlayers,
+                    key = { _, player -> player.name }
+                ) { index, player ->
+                    PlayerScoreCard(
+                        player = player,
+                        isWinner = player.score == highestScore,
+                        rank = index + 1
+                    )
+                }
             }
         }
     }
