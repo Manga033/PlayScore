@@ -1,5 +1,8 @@
 package com.example.playscore.data.repository
 
+import com.example.playscore.data.util.Game
+import com.example.playscore.data.util.Player
+
 object GameRepository {
     fun getGames() : List<Game> {
         return listOf(

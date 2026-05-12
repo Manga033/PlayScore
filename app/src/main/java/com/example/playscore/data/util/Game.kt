@@ -1,4 +1,4 @@
-package com.example.playscore.data.repository
+package com.example.playscore.data.util
 
 data class Player(
     val name: String,

@@ -22,7 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.playscore.data.repository.Game
+import com.example.playscore.data.util.Game
 import com.example.playscore.presentation.theme.AccentPurple
 import com.example.playscore.presentation.theme.DarkCard
 import com.example.playscore.presentation.theme.TextSecondary
