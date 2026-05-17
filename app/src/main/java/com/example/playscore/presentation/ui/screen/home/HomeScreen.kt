@@ -26,6 +26,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -41,23 +42,61 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.playscore.presentation.theme.TextSecondary
 import com.example.playscore.presentation.ui.component.EmptyStateMessage
 import com.example.playscore.presentation.ui.component.ScrollToTopButton
 import com.example.playscore.presentation.ui.screen.home.component.GameCard
 import com.example.playscore.presentation.ui.screen.home.component.GameTypeCard
 import com.example.playscore.presentation.ui.screen.home.component.RecentGameCard
-import com.example.playscore.presentation.view_model.PlayScoreViewModel
+import com.example.playscore.presentation.view_model.home.HomeUiState
+import com.example.playscore.presentation.view_model.home.HomeViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
-    viewModel: PlayScoreViewModel,
+    viewModel: HomeViewModel,
     onNavigateToLogin: () -> Unit,
     onNavigateToViewGame: (Int, String) -> Unit
 ) {
-    val uiState = viewModel.homeUiState.value
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    when (val state = uiState) {
+        HomeUiState.Init,
+        HomeUiState.Loading -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            }
+        }
+        is HomeUiState.Error -> {
+            EmptyStateMessage(
+                message = "Could not load games",
+                subtitle = state.message
+            )
+        }
+        is HomeUiState.Success -> {
+            HomeScreen(
+                uiState = state,
+                onGameTypeSelected = viewModel::selectGameType,
+                onNavigateToLogin = onNavigateToLogin,
+                onNavigateToViewGame = onNavigateToViewGame
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun HomeScreen(
+    uiState: HomeUiState.Success,
+    onGameTypeSelected: (String) -> Unit,
+    onNavigateToLogin: () -> Unit,
+    onNavigateToViewGame: (Int, String) -> Unit
+) {
 
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var sortAscending by rememberSaveable { mutableStateOf(false) }
@@ -69,10 +108,9 @@ fun HomeScreen(
         derivedStateOf { listState.firstVisibleItemIndex > 2 }
     }
 
-    val filteredGames by remember {
+    val filteredGames by remember(uiState, searchQuery, sortAscending) {
         derivedStateOf {
-            val currentState = viewModel.homeUiState.value
-            val typeFiltered = currentState.filteredByType
+            val typeFiltered = uiState.filteredByType
             val searched = if (searchQuery.isBlank()) typeFiltered
             else typeFiltered.filter { game ->
                 game.name.contains(searchQuery, ignoreCase = true) ||
@@ -83,11 +121,7 @@ fun HomeScreen(
         }
     }
 
-    val isSearchEmpty by remember {
-        derivedStateOf {
-            filteredGames.isEmpty() && viewModel.homeUiState.value.hasGames
-        }
-    }
+    val isSearchEmpty = filteredGames.isEmpty() && uiState.hasGames
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -166,9 +200,9 @@ fun HomeScreen(
             if (uiState.hasGames) {
                 item {
                     Text(
-                        text = "${viewModel.totalGamesCount} games tracked  ·  " +
-                                "${viewModel.boardGamesCount} board  ·  " +
-                                "${viewModel.sportsGamesCount} sports",
+                        text = "${uiState.totalGames} games tracked  -  " +
+                                "${uiState.boardGames.size} board  -  " +
+                                "${uiState.sportsGames.size} sports",
                         fontSize = 12.sp,
                         color = TextSecondary,
                         modifier = Modifier.padding(horizontal = 16.dp)
@@ -190,12 +224,12 @@ fun HomeScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(viewModel.getGameTypes()) { type ->
+                    items(uiState.gameTypes) { type ->
                         GameTypeCard(
                             type = type,
                             count = uiState.countForType(type),
                             isSelected = uiState.selectedType == type,
-                            onClick = { viewModel.selectGameType(type) }
+                            onClick = { onGameTypeSelected(type) }
                         )
                     }
                 }

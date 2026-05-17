@@ -19,10 +19,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.playscore.data.util.Game
+import com.example.playscore.model.domain.Game
 import com.example.playscore.presentation.theme.AccentPurple
 import com.example.playscore.presentation.theme.DarkCard
 import com.example.playscore.presentation.theme.TextSecondary
@@ -43,8 +45,8 @@ fun GameCard(
         val others = game.players
             .sortedByDescending { it.score }
             .drop(1)
-            .joinToString(" · ") { "${it.name} (${it.score})" }
-        "Winner: ${winner?.name ?: "TBD"} (${winner?.score ?: 0})  ·  $others"
+            .joinToString(" - ") { "${it.name} (${it.score})" }
+        "Winner: ${winner?.name ?: "TBD"} (${winner?.score ?: 0}) - $others"
     }
 
     Card(
@@ -82,14 +84,16 @@ fun GameCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Default.EmojiEvents,
-                    contentDescription = "Score",
-                    tint = AccentPurple,
+                    contentDescription = "Winner",
+                    tint = Color(0xFFFFD54F),
                     modifier = Modifier.padding(end = 4.dp)
                 )
                 Text(
                     text = scoreText,
                     fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 

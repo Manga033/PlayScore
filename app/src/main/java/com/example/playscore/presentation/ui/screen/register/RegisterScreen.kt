@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,17 +37,32 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.playscore.presentation.theme.TextSecondary
 import com.example.playscore.presentation.ui.component.ScreenHeader
 import com.example.playscore.presentation.ui.screen.register.component.RegisterFormField
 import com.example.playscore.presentation.util.Validation
+import com.example.playscore.presentation.view_model.register.RegisterNavigationEvent
+import com.example.playscore.presentation.view_model.register.RegisterUiState
+import com.example.playscore.presentation.view_model.register.RegisterViewModel
 
 @Composable
 fun RegisterScreen(
+    viewModel: RegisterViewModel,
     onNavigateToLogin: () -> Unit,
     onNavigateBack: () -> Unit,
     onRegisterSuccess: () -> Unit
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvent.collect { event ->
+            when (event) {
+                RegisterNavigationEvent.Navigate -> onRegisterSuccess()
+            }
+        }
+    }
+
     var username by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
@@ -112,10 +128,13 @@ fun RegisterScreen(
         confirmPasswordError = confirmPasswordError,
         confirmPasswordVisible = confirmPasswordVisible,
         onConfirmPasswordVisibilityToggle = { confirmPasswordVisible = !confirmPasswordVisible },
-        isFormValid = isFormValid,
+        isFormValid = isFormValid && uiState !is RegisterUiState.Loading,
+        errorMessage = (uiState as? RegisterUiState.Error)?.message.orEmpty(),
         onNavigateToLogin = onNavigateToLogin,
         onNavigateBack = onNavigateBack,
-        onRegisterSuccess = onRegisterSuccess
+        onRegisterClick = {
+            viewModel.register(username, email, password)
+        }
     )
 }
 
@@ -138,9 +157,10 @@ private fun RegisterScreen(
     confirmPasswordVisible: Boolean,
     onConfirmPasswordVisibilityToggle: () -> Unit,
     isFormValid: Boolean,
+    errorMessage: String,
     onNavigateToLogin: () -> Unit,
     onNavigateBack: () -> Unit,
-    onRegisterSuccess: () -> Unit
+    onRegisterClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -239,8 +259,17 @@ private fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                if (errorMessage.isNotBlank()) {
+                    Text(
+                        text = errorMessage,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
                 Button(
-                    onClick = onRegisterSuccess,
+                    onClick = onRegisterClick,
                     enabled = isFormValid,
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
