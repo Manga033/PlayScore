@@ -16,6 +16,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,24 +28,37 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.playscore.presentation.theme.TextSecondary
 import com.example.playscore.presentation.ui.component.ScreenHeader
 import com.example.playscore.presentation.ui.screen.creategame.component.CreateGameFormField
 import com.example.playscore.presentation.util.Validation
+import com.example.playscore.presentation.view_model.creategame.CreateGameNavigationEvent
+import com.example.playscore.presentation.view_model.creategame.CreateGameUiState
+import com.example.playscore.presentation.view_model.creategame.CreateGameViewModel
 
 @Composable
 fun CreateGameScreen(
+    viewModel: CreateGameViewModel,
     onNavigateBack: () -> Unit,
     onGameCreated: () -> Unit
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvent.collect { event ->
+            when (event) {
+                CreateGameNavigationEvent.NavigateBack -> onGameCreated()
+            }
+        }
+    }
+
     var gameName by rememberSaveable { mutableStateOf("") }
     var gameType by rememberSaveable { mutableStateOf("Board Game") }
     var player1 by rememberSaveable { mutableStateOf("") }
     var player2 by rememberSaveable { mutableStateOf("") }
     var player3 by rememberSaveable { mutableStateOf("") }
     var player4 by rememberSaveable { mutableStateOf("") }
-
-    val gameTypes = listOf("Board Game", "Sports")
 
     val isBoardGame by remember {
         derivedStateOf { gameType == "Board Game" }
@@ -60,9 +74,66 @@ fun CreateGameScreen(
 
     val isFormValid by remember {
         derivedStateOf {
-            Validation.isGameNameValid(gameName) && player1.isNotBlank()
+            Validation.isGameNameValid(gameName) &&
+                    Validation.hasRequiredPlayersForGameType(
+                        gameType = gameType,
+                        playerNames = listOf(player1, player2, player3, player4)
+                    )
         }
     }
+
+    CreateGameScreen(
+        gameName = gameName,
+        onGameNameChange = { gameName = it },
+        gameNameError = gameNameError,
+        gameType = gameType,
+        onGameTypeChange = { gameType = it },
+        isBoardGame = isBoardGame,
+        player1 = player1,
+        onPlayer1Change = { player1 = it },
+        player2 = player2,
+        onPlayer2Change = { player2 = it },
+        player3 = player3,
+        onPlayer3Change = { player3 = it },
+        player4 = player4,
+        onPlayer4Change = { player4 = it },
+        isFormValid = isFormValid && uiState !is CreateGameUiState.Loading,
+        isLoading = uiState is CreateGameUiState.Loading,
+        errorMessage = (uiState as? CreateGameUiState.Error)?.message.orEmpty(),
+        onNavigateBack = onNavigateBack,
+        onCreateGameClick = {
+            viewModel.createGame(
+                name = gameName,
+                type = gameType,
+                playerNames = listOf(player1, player2, player3, player4)
+            )
+        }
+    )
+}
+
+@Composable
+private fun CreateGameScreen(
+    gameName: String,
+    onGameNameChange: (String) -> Unit,
+    gameNameError: String,
+    gameType: String,
+    onGameTypeChange: (String) -> Unit,
+    isBoardGame: Boolean,
+    player1: String,
+    onPlayer1Change: (String) -> Unit,
+    player2: String,
+    onPlayer2Change: (String) -> Unit,
+    player3: String,
+    onPlayer3Change: (String) -> Unit,
+    player4: String,
+    onPlayer4Change: (String) -> Unit,
+    isFormValid: Boolean,
+    isLoading: Boolean,
+    errorMessage: String,
+    onNavigateBack: () -> Unit,
+    onCreateGameClick: () -> Unit
+) {
+    val gameTypes = listOf("Board Game", "Sports")
 
     Column(
         modifier = Modifier
@@ -94,7 +165,7 @@ fun CreateGameScreen(
 
             CreateGameFormField(
                 value = gameName,
-                onValueChange = { gameName = it },
+                onValueChange = onGameNameChange,
                 label = "Game Name",
                 placeholder = "e.g. Football Match",
                 errorMessage = gameNameError
@@ -118,7 +189,7 @@ fun CreateGameScreen(
                 ) {
                     RadioButton(
                         selected = gameType == type,
-                        onClick = { gameType = type },
+                        onClick = { onGameTypeChange(type) },
                         colors = RadioButtonDefaults.colors(
                             selectedColor = MaterialTheme.colorScheme.primary
                         )
@@ -145,11 +216,11 @@ fun CreateGameScreen(
 
             CreateGameFormField(
                 value = player1,
-                onValueChange = { player1 = it },
+                onValueChange = onPlayer1Change,
                 label = if (isBoardGame) "Player 1 *" else "Team 1 *",
                 placeholder = if (isBoardGame) "Player name" else "Team name",
-                errorMessage = if (player1.isEmpty() && gameName.isNotBlank()) {
-                    "At least one player is required!"
+                errorMessage = if (!Validation.isPlayerNameValid(player1) && gameName.isNotBlank()) {
+                    if (isBoardGame) "At least one player is required!" else "Team 1 is required!"
                 } else ""
             )
 
@@ -157,9 +228,15 @@ fun CreateGameScreen(
 
             CreateGameFormField(
                 value = player2,
-                onValueChange = { player2 = it },
-                label = if (isBoardGame) "Player 2 (optional)" else "Team 2 (optional)",
-                placeholder = if (isBoardGame) "Player name" else "Team name"
+                onValueChange = onPlayer2Change,
+                label = if (isBoardGame) "Player 2 (optional)" else "Team 2 *",
+                placeholder = if (isBoardGame) "Player name" else "Team name",
+                errorMessage = if (!isBoardGame &&
+                    !Validation.isPlayerNameValid(player2) &&
+                    Validation.isPlayerNameValid(player1)
+                ) {
+                    "Team 2 is required!"
+                } else ""
             )
 
             if (isBoardGame) {
@@ -167,7 +244,7 @@ fun CreateGameScreen(
 
                 CreateGameFormField(
                     value = player3,
-                    onValueChange = { player3 = it },
+                    onValueChange = onPlayer3Change,
                     label = "Player 3 (optional)",
                     placeholder = "Player name"
                 )
@@ -176,9 +253,18 @@ fun CreateGameScreen(
 
                 CreateGameFormField(
                     value = player4,
-                    onValueChange = { player4 = it },
+                    onValueChange = onPlayer4Change,
                     label = "Player 4 (optional)",
                     placeholder = "Player name"
+                )
+            }
+
+            if (errorMessage.isNotBlank()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = errorMessage,
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 12.sp
                 )
             }
 
@@ -186,7 +272,7 @@ fun CreateGameScreen(
         }
 
         Button(
-            onClick = onGameCreated,
+            onClick = onCreateGameClick,
             enabled = isFormValid,
             modifier = Modifier
                 .fillMaxWidth()
@@ -195,7 +281,10 @@ fun CreateGameScreen(
                 containerColor = MaterialTheme.colorScheme.primary
             )
         ) {
-            Text(text = "Create Game", fontSize = 16.sp)
+            Text(
+                text = if (isLoading) "Creating..." else "Create Game",
+                fontSize = 16.sp
+            )
         }
     }
 }

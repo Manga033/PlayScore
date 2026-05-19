@@ -5,6 +5,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -17,23 +19,27 @@ import com.example.playscore.presentation.ui.screen.home.HomeScreen
 import com.example.playscore.presentation.ui.screen.login.LoginScreen
 import com.example.playscore.presentation.ui.screen.register.RegisterScreen
 import com.example.playscore.presentation.ui.screen.viewgame.ViewGameScreen
-import com.example.playscore.presentation.view_model.PlayScoreViewModel
+import com.example.playscore.presentation.view_model.home.HomeUiState
+import com.example.playscore.presentation.view_model.home.HomeViewModel
 
 @Composable
-fun AppNavigation(viewModel: PlayScoreViewModel) {
+fun AppNavigation() {
     val navController = rememberNavController()
+    val homeViewModel: HomeViewModel = hiltViewModel()
+    val homeUiState by homeViewModel.uiState.collectAsStateWithLifecycle()
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStackEntry?.destination?.route
 
     val bottomBarScreens = listOf(Screen.Home.route, Screen.CreateGame.route)
     val showBottomBar = currentRoute in bottomBarScreens
+    val gameCount = (homeUiState as? HomeUiState.Success)?.totalGames ?: 0
 
     Scaffold(
         bottomBar = {
             if (showBottomBar) {
                 BottomNavBar(
                     currentRoute = currentRoute,
-                    gameCount = viewModel.totalGamesCount,
+                    gameCount = gameCount,
                     onNavigateToHome = {
                         navController.navigate(Screen.Home.route) {
                             launchSingleTop = true
@@ -57,18 +63,18 @@ fun AppNavigation(viewModel: PlayScoreViewModel) {
         ) {
             composable(Screen.Home.route) {
                 HomeScreen(
-                    viewModel = viewModel,
+                    viewModel = homeViewModel,
                     onNavigateToLogin = {
                         navController.navigate(Screen.Login.route)
                     },
                     onNavigateToViewGame = { gameId, gameName ->
-                        viewModel.selectGame(gameId)
                         navController.navigate(Screen.ViewGame.createRoute(gameId, gameName))
                     }
                 )
             }
             composable(Screen.Login.route) {
                 LoginScreen(
+                    viewModel = hiltViewModel(),
                     onNavigateToRegister = {
                         navController.navigate(Screen.Register.route)
                     },
@@ -84,6 +90,7 @@ fun AppNavigation(viewModel: PlayScoreViewModel) {
             }
             composable(Screen.Register.route) {
                 RegisterScreen(
+                    viewModel = hiltViewModel(),
                     onNavigateToLogin = {
                         navController.navigateUp()
                     },
@@ -99,6 +106,7 @@ fun AppNavigation(viewModel: PlayScoreViewModel) {
             }
             composable(Screen.CreateGame.route) {
                 CreateGameScreen(
+                    viewModel = hiltViewModel(),
                     onNavigateBack = {
                         navController.navigateUp()
                     },
@@ -116,11 +124,10 @@ fun AppNavigation(viewModel: PlayScoreViewModel) {
                     navArgument("gameName") { type = NavType.StringType }
                 )
             ) { backStackEntry ->
-                val gameId = backStackEntry.arguments?.getInt("gameId") ?: 0
                 val gameName = backStackEntry.arguments?.getString("gameName") ?: ""
 
                 ViewGameScreen(
-                    viewModel = viewModel,
+                    viewModel = hiltViewModel(),
                     gameName = gameName,
                     onNavigateBack = {
                         navController.navigateUp()
