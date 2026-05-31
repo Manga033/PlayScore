@@ -83,8 +83,8 @@ class GameRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun createGame(name: String, type: String, players: List<Player>) {
-        withContext(Dispatchers.IO) {
+    override suspend fun createGame(name: String, type: String, players: List<Player>): Int {
+        return withContext(Dispatchers.IO) {
             val date = SimpleDateFormat("dd MMM, yyyy", Locale.getDefault()).format(Date())
             insertGameWithPlayers(
                 Game(
@@ -132,10 +132,11 @@ class GameRepositoryImpl @Inject constructor(
         }
     }
 
-    private suspend fun insertGameWithPlayers(game: Game) {
+    private suspend fun insertGameWithPlayers(game: Game): Int {
         val typeId = getOrCreateGameTypeId(game.type)
         val gameId = gameDao.insertGame(game.toGameEntity(typeId)).toInt()
         playerDao.insertPlayers(game.players.map { it.toPlayerEntity(gameId) })
+        return gameId
     }
 
     private suspend fun getOrCreateGameTypeId(type: String): Int {

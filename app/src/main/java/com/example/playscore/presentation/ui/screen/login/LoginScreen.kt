@@ -27,6 +27,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -52,6 +53,7 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect { event ->
@@ -102,6 +104,9 @@ fun LoginScreen(
         onNavigateBack = onNavigateBack,
         onLoginClick = {
             viewModel.login(email, password)
+        },
+        onGoogleLoginClick = {
+            viewModel.loginWithGoogle(context)
         }
     )
 }
@@ -120,7 +125,8 @@ private fun LoginScreen(
     errorMessage: String,
     onNavigateToRegister: () -> Unit,
     onNavigateBack: () -> Unit,
-    onLoginClick: () -> Unit
+    onLoginClick: () -> Unit,
+    onGoogleLoginClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -201,6 +207,18 @@ private fun LoginScreen(
                     )
                 ) {
                     Text(text = "Login", fontSize = 16.sp)
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(
+                    onClick = onGoogleLoginClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary
+                    )
+                ) {
+                    Text(text = "Sign in with Google", fontSize = 16.sp)
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))

@@ -30,8 +30,9 @@ fun EmptyStateMessage(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "🎮",
-            fontSize = 48.sp
+            text = "PlayScore",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(

@@ -82,6 +82,7 @@ fun AppNavigation() {
                         navController.navigateUp()
                     },
                     onLoginSuccess = {
+                        homeViewModel.refreshLoginSession()
                         navController.navigate(Screen.Home.route) {
                             popUpTo(Screen.Login.route) { inclusive = true }
                         }
@@ -110,7 +111,8 @@ fun AppNavigation() {
                     onNavigateBack = {
                         navController.navigateUp()
                     },
-                    onGameCreated = {
+                    onGameCreated = { message ->
+                        homeViewModel.showSyncMessage(message)
                         navController.navigate(Screen.Home.route) {
                             popUpTo(Screen.Home.route) { inclusive = false }
                         }
@@ -129,7 +131,10 @@ fun AppNavigation() {
                 ViewGameScreen(
                     viewModel = hiltViewModel(),
                     gameName = gameName,
-                    onNavigateBack = {
+                    onNavigateBack = { message ->
+                        if (message.isNotBlank()) {
+                            homeViewModel.showSyncMessage(message)
+                        }
                         navController.navigateUp()
                     }
                 )

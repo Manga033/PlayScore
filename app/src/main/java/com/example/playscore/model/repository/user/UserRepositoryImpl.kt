@@ -15,6 +15,12 @@ class UserRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun isEmailRegistered(email: String): Boolean {
+        return withContext(Dispatchers.IO) {
+            userDao.getUserByEmail(email) != null
+        }
+    }
+
     override suspend fun register(username: String, email: String, password: String): Boolean {
         return withContext(Dispatchers.IO) {
             if (userDao.getUserByEmail(email) != null) {

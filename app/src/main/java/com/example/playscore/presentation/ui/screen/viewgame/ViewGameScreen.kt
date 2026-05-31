@@ -59,14 +59,14 @@ import java.util.Locale
 fun ViewGameScreen(
     viewModel: ViewGameViewModel,
     gameName: String,
-    onNavigateBack: () -> Unit
+    onNavigateBack: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect { event ->
             when (event) {
-                ViewGameNavigationEvent.NavigateBack -> onNavigateBack()
+                is ViewGameNavigationEvent.NavigateBack -> onNavigateBack(event.message)
             }
         }
     }
@@ -74,7 +74,7 @@ fun ViewGameScreen(
     ViewGameScreen(
         gameName = gameName,
         uiState = uiState,
-        onNavigateBack = onNavigateBack,
+        onNavigateBack = { onNavigateBack("") },
         onDecreaseScore = { player ->
             viewModel.decreaseScore(player.id, player.score)
         },
@@ -129,6 +129,7 @@ private fun ViewGameScreen(
                 ViewGameContent(
                     game = uiState.game,
                     scoreLog = uiState.scoreLog,
+                    syncMessage = uiState.syncMessage,
                     winnerName = uiState.winnerName,
                     playerCount = uiState.playerCount,
                     totalScore = uiState.totalScore,
@@ -171,6 +172,7 @@ private fun ViewGameScreen(
 private fun ViewGameContent(
     game: Game,
     scoreLog: List<ScoreLogEntry>,
+    syncMessage: String,
     winnerName: String,
     playerCount: Int,
     totalScore: Int,
@@ -234,6 +236,15 @@ private fun ViewGameContent(
     }
 
     Spacer(modifier = Modifier.height(24.dp))
+
+    if (syncMessage.isNotBlank()) {
+        Text(
+            text = syncMessage,
+            fontSize = 12.sp,
+            color = TextSecondary
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+    }
 
     Text(
         text = "Scoreboard",

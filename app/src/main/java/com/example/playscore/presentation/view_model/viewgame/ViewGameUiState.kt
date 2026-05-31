@@ -8,7 +8,8 @@ sealed interface ViewGameUiState {
     data object Loading : ViewGameUiState
     data class Success(
         val game: Game,
-        val scoreLog: List<ScoreLogEntry>
+        val scoreLog: List<ScoreLogEntry>,
+        val syncMessage: String = ""
     ) : ViewGameUiState {
         val playerCount: Int
             get() = game.players.size

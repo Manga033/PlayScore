@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SwapVert
@@ -83,6 +84,7 @@ fun HomeScreen(
                 uiState = state,
                 onGameTypeSelected = viewModel::selectGameType,
                 onNavigateToLogin = onNavigateToLogin,
+                onLogout = viewModel::logout,
                 onNavigateToViewGame = onNavigateToViewGame
             )
         }
@@ -95,6 +97,7 @@ private fun HomeScreen(
     uiState: HomeUiState.Success,
     onGameTypeSelected: (String) -> Unit,
     onNavigateToLogin: () -> Unit,
+    onLogout: () -> Unit,
     onNavigateToViewGame: (Int, String) -> Unit
 ) {
 
@@ -147,12 +150,14 @@ private fun HomeScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
                     IconButton(
-                        onClick = onNavigateToLogin,
+                        onClick = {
+                            if (uiState.isLoggedIn) onLogout() else onNavigateToLogin()
+                        },
                         modifier = Modifier.align(Alignment.CenterEnd)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Login",
+                            imageVector = if (uiState.isLoggedIn) Icons.AutoMirrored.Filled.Logout else Icons.Default.Person,
+                            contentDescription = if (uiState.isLoggedIn) "Logout" else "Login",
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -203,6 +208,30 @@ private fun HomeScreen(
                         text = "${uiState.totalGames} games tracked  -  " +
                                 "${uiState.boardGames.size} board  -  " +
                                 "${uiState.sportsGames.size} sports",
+                        fontSize = 12.sp,
+                        color = TextSecondary,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+
+            if (uiState.networkMessage.isNotBlank() || uiState.cloudMessage.isNotBlank()) {
+                item {
+                    Text(
+                        text = "API: ${uiState.networkGames.size} games  -  Cloud: ${uiState.cloudGames.size} games",
+                        fontSize = 12.sp,
+                        color = TextSecondary,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+
+            if (uiState.syncMessage.isNotBlank()) {
+                item {
+                    Text(
+                        text = uiState.syncMessage,
                         fontSize = 12.sp,
                         color = TextSecondary,
                         modifier = Modifier.padding(horizontal = 16.dp)

@@ -4,6 +4,7 @@ import com.example.playscore.model.data.local.entity.UserEntity
 
 interface UserRepository {
     suspend fun login(email: String, password: String): UserEntity?
+    suspend fun isEmailRegistered(email: String): Boolean
     suspend fun register(username: String, email: String, password: String): Boolean
 }
 
