@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "580070870422",
+    "project_id": "playscore-48eda",
+    "storage_bucket": "playscore-48eda.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:580070870422:android:60b790c0e0928db1b2a1b7",
+        "android_client_info": {
+          "package_name": "com.example.playscore"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "580070870422-2i86m2slp7juvidlavpnr7m5pe2h33pm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.playscore",
+            "certificate_hash": "577fc76403a5f49a073f024c84fd94f4b362192d"
+          }
+        },
+        {
+          "client_id": "580070870422-03nch8qtpbj9o8pnv8gs9m2ce6l81gs7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCk9TZnuAs3JuEilDQcTXG0FJFEIPK9qmM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "580070870422-03nch8qtpbj9o8pnv8gs9m2ce6l81gs7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

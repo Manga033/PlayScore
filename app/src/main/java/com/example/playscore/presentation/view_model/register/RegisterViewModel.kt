@@ -2,6 +2,7 @@ package com.example.playscore.presentation.view_model.register
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.playscore.model.repository.auth.AuthRepository
 import com.example.playscore.model.repository.user.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -15,7 +16,8 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class RegisterViewModel @Inject constructor(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<RegisterUiState>(RegisterUiState.Init)
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
@@ -27,6 +29,11 @@ class RegisterViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = RegisterUiState.Loading
             try {
+                if (userRepository.isEmailRegistered(email.trim())) {
+                    _uiState.value = RegisterUiState.Error("A user with this email already exists.")
+                    return@launch
+                }
+                authRepository.register(email.trim(), password)
                 val isRegistered = userRepository.register(
                     username = username.trim(),
                     email = email.trim(),
@@ -40,7 +47,7 @@ class RegisterViewModel @Inject constructor(
                 }
             } catch (e: CancellationException) {
                 throw e
-            } catch (e: IllegalStateException) {
+            } catch (e: Exception) {
                 _uiState.value = RegisterUiState.Error(e.message ?: "Registration failed.")
             }
         }

@@ -7,6 +7,12 @@ sealed interface HomeUiState {
     data object Loading : HomeUiState
     data class Success(
         val games: List<Game> = emptyList(),
+        val networkGames: List<Game> = emptyList(),
+        val cloudGames: List<Game> = emptyList(),
+        val networkMessage: String = "",
+        val cloudMessage: String = "",
+        val syncMessage: String = "",
+        val isLoggedIn: Boolean = false,
         val gameTypes: List<String> = listOf("All"),
         val selectedType: String = "All"
     ) : HomeUiState {

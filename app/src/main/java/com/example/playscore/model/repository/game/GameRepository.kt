@@ -11,7 +11,7 @@ interface GameRepository {
     fun observeScoreHistoryForGame(gameId: Int): Flow<List<ScoreLogEntry>>
     fun observeGameTypes(): Flow<List<String>>
     suspend fun seedGamesIfNeeded()
-    suspend fun createGame(name: String, type: String, players: List<Player>)
+    suspend fun createGame(name: String, type: String, players: List<Player>): Int
     suspend fun updateGame(game: Game)
     suspend fun updatePlayerScore(playerId: Int, score: Int)
     suspend fun deleteGame(game: Game)

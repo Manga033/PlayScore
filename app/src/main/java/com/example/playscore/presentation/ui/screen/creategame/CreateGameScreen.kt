@@ -41,14 +41,14 @@ import com.example.playscore.presentation.view_model.creategame.CreateGameViewMo
 fun CreateGameScreen(
     viewModel: CreateGameViewModel,
     onNavigateBack: () -> Unit,
-    onGameCreated: () -> Unit
+    onGameCreated: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect { event ->
             when (event) {
-                CreateGameNavigationEvent.NavigateBack -> onGameCreated()
+                is CreateGameNavigationEvent.NavigateBack -> onGameCreated(event.message)
             }
         }
     }
